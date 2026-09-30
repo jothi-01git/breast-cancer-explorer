@@ -1,0 +1,2216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Breast Cancer Explorer</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin:0;
+            font-family:Arial,Helvetica,sans-serif;
+            background:#f4f7fb;
+            color:#26384a;
+        }
+
+        .app-layout {
+            display:flex;
+            min-height:100vh;
+        }
+
+        .sidebar {
+            width:245px;
+            min-height:100vh;
+            background:#173b5e;
+            color:white;
+            padding:28px 18px;
+            position:fixed;
+            left:0;
+            top:0;
+            bottom:0;
+        }
+
+        .logo-area {
+            padding:5px 12px 28px;
+            border-bottom:1px solid rgba(255,255,255,.15);
+            margin-bottom:25px;
+        }
+
+        .logo-title {
+            font-size:23px;
+            font-weight:bold;
+            letter-spacing:.3px;
+        }
+
+        .logo-subtitle {
+            margin-top:7px;
+            font-size:12px;
+            color:#cbd9e6;
+            line-height:1.5;
+        }
+
+        .sidebar-label {
+            font-size:11px;
+            color:#aebfd0;
+            text-transform:uppercase;
+            letter-spacing:1px;
+            padding:0 12px;
+            margin-bottom:10px;
+        }
+
+        .nav-button {
+            width:100%;
+            display:block;
+            border:none;
+            background:transparent;
+            color:#dce7f0;
+            text-align:left;
+            padding:12px 14px;
+            margin-bottom:5px;
+            border-radius:7px;
+            font-size:14px;
+            cursor:pointer;
+        }
+
+        .nav-button:hover {
+            background:rgba(255,255,255,.10);
+            color:white;
+        }
+
+        .nav-button.active {
+            background:#2b628f;
+            color:white;
+        }
+
+        .main-content {
+            margin-left:245px;
+            width:calc(100% - 245px);
+            min-height:100vh;
+            padding:32px 42px 50px;
+        }
+
+        .top-header {
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+            margin-bottom:28px;
+        }
+
+        .page-title {
+            margin:0;
+            color:#173b5e;
+            font-size:31px;
+            font-weight:700;
+        }
+
+        .page-subtitle {
+            margin-top:8px;
+            margin-bottom:0;
+            color:#647486;
+            font-size:14px;
+        }
+
+        .assembly-badge {
+            background:#e7eef5;
+            color:#31546f;
+            padding:8px 13px;
+            border-radius:20px;
+            font-size:12px;
+            font-weight:bold;
+        }
+
+        .search-card,
+        .content-card,
+        .chart-card,
+        .network-card {
+            background:white;
+            border:1px solid #e0e7ee;
+            border-radius:11px;
+            box-shadow:0 3px 12px rgba(25,55,80,.04);
+        }
+
+        .search-card {
+            padding:24px;
+            margin-bottom:28px;
+            box-shadow:0 3px 12px rgba(25,55,80,.05);
+        }
+
+        .search-title {
+            margin:0 0 6px;
+            color:#213e58;
+            font-size:17px;
+        }
+
+        .search-description {
+            color:#718092;
+            font-size:13px;
+            margin-bottom:18px;
+        }
+
+        .search-form {
+            display:flex;
+            gap:10px;
+            margin:0;
+        }
+
+        .search-input {
+            flex:1;
+            max-width:550px;
+            padding:12px 14px;
+            border:1px solid #cbd5df;
+            border-radius:7px;
+            font-size:14px;
+            outline:none;
+        }
+
+        .search-input:focus {
+            border-color:#39739d;
+            box-shadow:0 0 0 3px rgba(57,115,157,.10);
+        }
+
+        .search-button,
+        .string-link {
+            border:none;
+            border-radius:7px;
+            background:#1f4e73;
+            color:white;
+            font-size:14px;
+            cursor:pointer;
+            text-decoration:none;
+            display:inline-block;
+        }
+
+        .search-button {
+            padding:12px 23px;
+        }
+
+        .search-button:hover,
+        .string-link:hover {
+            background:#173b5e;
+        }
+
+        .result-header {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            margin-bottom:20px;
+        }
+
+        .result-title {
+            margin:0;
+            font-size:24px;
+            color:#1e3850;
+        }
+
+        .result-label {
+            color:#748394;
+            font-size:12px;
+            margin-bottom:5px;
+        }
+
+        .section-tabs {
+            display:flex;
+            flex-wrap:wrap;
+            gap:7px;
+            margin-bottom:25px;
+            border-bottom:1px solid #d8e0e8;
+            padding-bottom:8px;
+        }
+
+        .section-tab {
+            border:none;
+            background:transparent;
+            color:#587087;
+            padding:10px 15px;
+            border-radius:7px;
+            font-size:13px;
+            cursor:pointer;
+        }
+
+        .section-tab:hover {
+            background:#e9eff5;
+            color:#234b6b;
+        }
+
+        .section-tab.active {
+            background:#1f4e73;
+            color:white;
+        }
+
+        .content-section {
+            display:none;
+        }
+
+        .content-section.active {
+            display:block;
+        }
+
+        .summary-grid {
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:16px;
+            margin-bottom:22px;
+        }
+
+        .summary-card {
+            background:white;
+            border:1px solid #e0e7ee;
+            border-radius:10px;
+            padding:19px;
+            box-shadow:0 3px 10px rgba(25,55,80,.04);
+        }
+
+        .summary-label {
+            color:#748494;
+            font-size:12px;
+            margin-bottom:10px;
+        }
+
+        .summary-value {
+            color:#1d4566;
+            font-size:25px;
+            font-weight:bold;
+        }
+
+        .summary-note {
+            margin-top:5px;
+            color:#8996a3;
+            font-size:11px;
+        }
+
+        .content-card,
+        .chart-card {
+            padding:24px;
+            margin-bottom:22px;
+        }
+
+        .card-title {
+            margin:0 0 7px;
+            color:#203f59;
+            font-size:18px;
+        }
+
+        .card-description {
+            color:#718092;
+            font-size:13px;
+            line-height:1.6;
+            margin-bottom:18px;
+        }
+
+        .disease-description {
+            color:#566879;
+            font-size:14px;
+            line-height:1.75;
+            margin:0;
+            white-space:pre-line;
+        }
+
+        .table-container {
+            overflow-x:auto;
+            border:1px solid #e0e6ec;
+            border-radius:8px;
+        }
+
+        table {
+            width:100%;
+            border-collapse:collapse;
+            background:white;
+            margin:0;
+        }
+
+        th {
+            background:#edf2f7;
+            color:#38546b;
+            font-size:12px;
+            font-weight:600;
+            padding:12px;
+            text-align:left;
+            border-bottom:1px solid #d8e1e9;
+            white-space:nowrap;
+        }
+
+        td {
+            padding:12px;
+            font-size:12px;
+            color:#4c5e6d;
+            border-bottom:1px solid #edf0f3;
+            vertical-align:top;
+        }
+
+        tr:hover td {
+            background:#f7f9fb;
+        }
+
+        tr:last-child td {
+            border-bottom:none;
+        }
+
+        a {
+            color:#1769aa;
+            text-decoration:none;
+            font-weight:500;
+        }
+
+        a:hover {
+            text-decoration:underline;
+        }
+
+        .chart-wrapper {
+            position:relative;
+            width:100%;
+            height:360px;
+        }
+
+        .clinvar-table-container {
+            overflow-x:auto;
+            border:1px solid #e0e6ec;
+            border-radius:8px;
+        }
+
+        .clinvar-table {
+            min-width:1400px;
+        }
+
+        .clinvar-table th,
+        .clinvar-table td {
+            white-space:nowrap;
+        }
+
+        .empty-state {
+            background:white;
+            border:1px solid #e0e7ee;
+            border-radius:10px;
+            padding:35px;
+            text-align:center;
+            color:#748394;
+        }
+
+        /* Network Analysis */
+
+        .network-card {
+            padding:24px;
+            margin-bottom:22px;
+        }
+
+        .network-card-header {
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:16px;
+            margin-bottom:12px;
+        }
+
+        .network-label {
+            color:#718092;
+            font-size:12px;
+            margin-bottom:5px;
+            text-transform:uppercase;
+            letter-spacing:.5px;
+        }
+
+        .network-title {
+            margin:0;
+            color:#213e58;
+            font-size:22px;
+        }
+
+        .network-badge {
+            background:#e7eef5;
+            color:#31546f;
+            padding:7px 12px;
+            border-radius:18px;
+            font-size:12px;
+            font-weight:700;
+        }
+
+        .network-description {
+            color:#5f7183;
+            font-size:14px;
+            line-height:1.7;
+            margin:0 0 16px;
+        }
+
+        .network-image-container {
+            width:100%;
+            margin:22px 0 28px;
+            padding:15px;
+            background:#f7f9fb;
+            border:1px solid #dfe6ed;
+            border-radius:10px;
+            text-align:center;
+            overflow-x:auto;
+        }
+
+        .network-image {
+            display:block;
+            width:100%;
+            max-width:1100px;
+            height:auto;
+            margin:0 auto;
+            border-radius:6px;
+        }
+
+        .network-instructions {
+            margin-top:25px;
+            padding-top:22px;
+            border-top:1px solid #e1e7ee;
+        }
+
+        .protein-list {
+            background:#f7f9fb;
+            border:1px solid #e0e7ee;
+            border-radius:8px;
+            padding:15px 20px;
+            margin:15px 0 18px;
+        }
+
+        .protein-list ol {
+            margin:0;
+            padding-left:25px;
+        }
+
+        .protein-list li {
+            padding:4px 0;
+            color:#42586b;
+            font-size:13px;
+        }
+
+        .string-instruction-box {
+            background:#edf4f9;
+            border-left:4px solid #1f4e73;
+            border-radius:6px;
+            padding:15px 18px;
+            margin-bottom:18px;
+        }
+
+        .string-instruction-box p {
+            margin:0 0 8px;
+            color:#526779;
+            font-size:13px;
+            line-height:1.7;
+        }
+
+        .string-instruction-box p:last-child {
+            margin-bottom:0;
+        }
+
+        .string-link {
+            padding:11px 17px;
+            font-size:13px;
+            font-weight:600;
+            margin-right:8px;
+            margin-bottom:8px;
+        }
+
+        .network-note {
+            margin:13px 0 0;
+            color:#7b8997;
+            font-size:12px;
+            line-height:1.6;
+        }
+
+        .gene-neighborhood-title {
+            color:#2a4d68;
+            font-size:15px;
+            margin-top:25px;
+            margin-bottom:8px;
+        }
+
+        /* Home */
+
+        .home-page {
+            max-width:1050px;
+            margin:30px auto 0;
+        }
+
+        .home-hero {
+            background:linear-gradient(135deg,#173b5e 0%,#285f88 100%);
+            border-radius:18px;
+            padding:52px 48px;
+            color:white;
+            box-shadow:0 10px 30px rgba(23,59,94,.16);
+        }
+
+        .home-kicker {
+            display:inline-block;
+            padding:6px 11px;
+            border:1px solid rgba(255,255,255,.25);
+            border-radius:20px;
+            font-size:11px;
+            text-transform:uppercase;
+            letter-spacing:1px;
+            margin-bottom:18px;
+            color:#e5f1fa;
+        }
+
+        .home-title {
+            margin:0;
+            font-size:40px;
+            line-height:1.15;
+            letter-spacing:-.7px;
+        }
+
+        .home-description {
+            margin:15px 0 28px;
+            max-width:760px;
+            color:#e1edf6;
+            font-size:14px;
+            line-height:1.7;
+        }
+
+        .home-search-card {
+            background:white;
+            border-radius:13px;
+            padding:20px;
+            max-width:850px;
+            box-shadow:0 8px 24px rgba(10,35,55,.16);
+        }
+
+        .home-search-label {
+            display:block;
+            color:#23445f;
+            font-size:14px;
+            font-weight:600;
+            margin-bottom:5px;
+        }
+
+        .home-search-help {
+            color:#718092;
+            font-size:12px;
+            margin-bottom:14px;
+        }
+
+        .home-features {
+            display:grid;
+            grid-template-columns:repeat(3,1fr);
+            gap:16px;
+            margin-top:22px;
+        }
+
+        .home-feature {
+            background:white;
+            border:1px solid #e0e7ee;
+            border-radius:12px;
+            padding:21px;
+            box-shadow:0 3px 12px rgba(25,55,80,.04);
+        }
+
+        .home-feature h3 {
+            margin:0 0 8px;
+            color:#203f59;
+            font-size:15px;
+        }
+
+        .home-feature p {
+            margin:0;
+            color:#718092;
+            font-size:12px;
+            line-height:1.6;
+        }
+
+        .home-result-section {
+            max-width:1050px;
+            margin:22px auto 0;
+        }
+
+        @media (max-width:1000px) {
+
+            .sidebar {
+                width:200px;
+            }
+
+            .main-content {
+                margin-left:200px;
+                width:calc(100% - 200px);
+                padding:25px;
+            }
+
+            .summary-grid {
+                grid-template-columns:repeat(2,1fr);
+            }
+        }
+
+        @media (max-width:700px) {
+
+            .app-layout {
+                display:block;
+            }
+
+            .sidebar {
+                position:relative;
+                width:100%;
+                min-height:auto;
+                padding:15px;
+            }
+
+            .logo-area {
+                padding-bottom:15px;
+                margin-bottom:15px;
+            }
+
+            .main-content {
+                margin-left:0;
+                width:100%;
+                padding:20px;
+            }
+
+            .summary-grid {
+                grid-template-columns:1fr;
+            }
+
+            .search-form {
+                flex-direction:column;
+            }
+
+            .search-input {
+                max-width:none;
+            }
+
+            .top-header {
+                flex-direction:column;
+                gap:12px;
+            }
+
+            .home-hero {
+                padding:35px 25px;
+            }
+
+            .home-title {
+                font-size:32px;
+            }
+
+            .home-features {
+                grid-template-columns:1fr;
+            }
+
+            .network-card-header {
+                flex-direction:column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="logo-area">
+            <div class="logo-title">BCE</div>
+            <div class="logo-subtitle">Breast Cancer Explorer</div>
+        </div>
+
+        <div class="sidebar-label">Explorer</div>
+
+        <button class="nav-button active"
+                onclick="openHome(event)">
+            Home
+        </button>
+
+        <!-- Requested order -->
+        <button class="nav-button"
+                onclick="openSection(event,'genes')">
+            Associated Genes
+        </button>
+
+        <button class="nav-button"
+                onclick="openSection(event,'locations')">
+            Genomic Locations
+        </button>
+
+        <button class="nav-button"
+                onclick="openSection(event,'variants')">
+            Variants
+        </button>
+
+        <button class="nav-button"
+                onclick="openSection(event,'literature')">
+            Literature
+        </button>
+
+        <button class="nav-button"
+                onclick="openSection(event,'neighborhood')">
+            Gene Neighborhood
+        </button>
+
+        <!-- Network Analysis intentionally LAST -->
+        <button class="nav-button"
+                onclick="openSection(event,'network')">
+            Network Analysis
+        </button>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        {% if not disease %}
+
+        <!-- LANDING HOME PAGE -->
+
+        <section class="home-page">
+
+            <div class="home-hero">
+
+                <div class="home-kicker">
+                    Integrated Bioinformatics Explorer
+                </div>
+
+                <h1 class="home-title">
+                    Breast Cancer Explorer
+                </h1>
+
+                <p class="home-description">
+                    Breast cancer is a disease in which abnormal breast cells grow uncontrollably and may form a tumor.<br>
+                    Its genomic features include disease-associated genes, genetic variants, and protein interactions that can be explored through bioinformatics resources.
+                </p>
+
+                <div class="home-search-card">
+
+                    <label class="home-search-label"
+                           for="home-disease">
+                        Explore Breast Cancer Data
+                    </label>
+
+                    <div class="home-search-help">
+                        Enter a disease name to begin exploring associated genes, genomic information, variants, literature, and biological relationships.
+                    </div>
+
+                    <form method="POST"
+                          class="search-form">
+
+                        <input type="text"
+                               id="home-disease"
+                               name="disease"
+                               class="search-input"
+                               placeholder="Example: Breast Cancer"
+                               required>
+
+                        <button type="submit"
+                                class="search-button">
+                            Start Exploring
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+
+            <div class="home-features">
+
+                <div class="home-feature">
+                    <h3>Gene &amp; Genomic Analysis</h3>
+                    <p>
+                        Explore disease-associated genes, association scores,
+                        chromosomes, and genomic coordinates.
+                    </p>
+                </div>
+
+                <div class="home-feature">
+                    <h3>Variant &amp; Literature Analysis</h3>
+                    <p>
+                        Examine ClinVar variants and recent PubMed literature
+                        within the same disease-focused workflow.
+                    </p>
+                </div>
+
+                <div class="home-feature">
+                    <h3>Biological Network Analysis</h3>
+                    <p>
+                        Explore protein associations and genomic neighborhoods
+                        among selected disease-associated genes.
+                    </p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        {% else %}
+
+        <!-- RESULTS HEADER -->
+
+        <div class="top-header">
+
+            <div>
+
+                <h1 class="page-title">
+                    Breast Cancer Explorer
+                </h1>
+
+                <p class="page-subtitle">
+                    Integrated exploration of breast cancer genes, genomic information, variants and literature.
+                </p>
+
+            </div>
+
+            {% if genes %}
+            <div class="assembly-badge">
+                {{ genes[0].assembly }}
+            </div>
+            {% endif %}
+
+        </div>
+
+
+        <!-- SEARCH -->
+
+        <div class="search-card">
+
+            <h2 class="search-title">
+                Disease Search
+            </h2>
+
+            <div class="search-description">
+                Enter a disease name to retrieve associated genes,
+                genomic information, variants and literature.
+            </div>
+
+            <form method="POST"
+                  class="search-form">
+
+                <input type="text"
+                       id="disease"
+                       name="disease"
+                       class="search-input"
+                       placeholder="Example: Breast Cancer"
+                       required>
+
+                <button type="submit"
+                        class="search-button">
+                    Search
+                </button>
+
+            </form>
+
+        </div>
+
+
+        <!-- RESULT HEADER -->
+
+        <div class="result-header">
+
+            <div>
+
+                <div class="result-label">
+                    Search results
+                </div>
+
+                <h2 class="result-title">
+                    {{ disease }}
+                </h2>
+
+            </div>
+
+        </div>
+
+
+        <!-- RESULT TABS -->
+        <!-- Exact requested order:
+             Associated Genes
+             Genomic Locations
+             Variants
+             Literature
+             Gene Neighborhood
+             Network Analysis
+        -->
+
+        <div class="section-tabs">
+
+            <button class="section-tab active"
+                    onclick="openSection(event,'genes')">
+                Associated Genes
+            </button>
+
+            <button class="section-tab"
+                    onclick="openSection(event,'locations')">
+                Genomic Locations
+            </button>
+
+            <button class="section-tab"
+                    onclick="openSection(event,'variants')">
+                Variants
+            </button>
+
+            <button class="section-tab"
+                    onclick="openSection(event,'literature')">
+                Literature
+            </button>
+
+            <button class="section-tab"
+                    onclick="openSection(event,'neighborhood')">
+                Gene Neighborhood
+            </button>
+
+            <!-- Network Analysis LAST -->
+            <button class="section-tab"
+                    onclick="openSection(event,'network')">
+                Network Analysis
+            </button>
+
+        </div>
+
+
+        <!-- ========================================================= -->
+        <!-- HOME RESULT SUMMARY                                      -->
+        <!-- ========================================================= -->
+
+        <section id="home"
+                 class="content-section">
+
+            <div class="summary-grid">
+
+                <div class="summary-card">
+
+                    <div class="summary-label">
+                        Associated Genes
+                    </div>
+
+                    <div class="summary-value">
+                        {{ genes|length }}
+                    </div>
+
+                    <div class="summary-note">
+                        Open Targets
+                    </div>
+
+                </div>
+
+
+                <div class="summary-card">
+
+                    <div class="summary-label">
+                        ClinVar Variants
+                    </div>
+
+                    <div class="summary-value">
+                        {{ clinvar_variants|length }}
+                    </div>
+
+                    <div class="summary-note">
+                        Filtered associated-gene records
+                    </div>
+
+                </div>
+
+
+                <div class="summary-card">
+
+                    <div class="summary-label">
+                        PubMed Articles
+                    </div>
+
+                    <div class="summary-value">
+                        {{ pubmed_articles|length }}
+                    </div>
+
+                    <div class="summary-note">
+                        Recent literature
+                    </div>
+
+                </div>
+
+
+                <div class="summary-card">
+
+                    <div class="summary-label">
+                        Genome Assembly
+                    </div>
+
+                    <div class="summary-value"
+                         style="font-size:21px;">
+                        {% if genes %}
+                            {{ genes[0].assembly }}
+                        {% else %}
+                            GRCh38
+                        {% endif %}
+                    </div>
+
+                    <div class="summary-note">
+                        Ensembl genomic coordinates
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {% if disease_description %}
+
+            <div class="content-card">
+
+                <h2 class="card-title">
+                    Disease Description
+                </h2>
+
+                <p class="card-description">
+                    Description retrieved for the selected disease.
+                </p>
+
+                <p class="disease-description">
+                    {{ disease_description }}
+                </p>
+
+            </div>
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- ========================================================= -->
+        <!-- 1. ASSOCIATED GENES                                      -->
+        <!-- ========================================================= -->
+
+        <section id="genes"
+                 class="content-section active">
+
+            {% if genes %}
+
+            <div class="chart-card">
+
+                <h2 class="card-title">
+                    Gene Association Visualization
+                </h2>
+
+                <p class="card-description">
+                    Association scores retrieved from Open Targets.
+                </p>
+
+                <div class="chart-wrapper">
+                    <canvas id="associationChart"></canvas>
+                </div>
+
+            </div>
+
+            {% else %}
+
+            <div class="empty-state">
+                No genes found for this disease.
+            </div>
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- ========================================================= -->
+        <!-- 2. GENOMIC LOCATIONS                                     -->
+        <!-- ========================================================= -->
+
+        <section id="locations"
+                 class="content-section">
+
+            {% if genes %}
+
+            <div class="content-card">
+
+                <h2 class="card-title">
+                    Genomic Locations
+                </h2>
+
+                <p class="card-description">
+                    Genomic coordinates retrieved from Ensembl using the GRCh38 assembly.
+                </p>
+
+                <div class="table-container">
+
+                    <table>
+
+                        <tr>
+                            <th>Gene</th>
+                            <th>Gene Name</th>
+                            <th>Association Score</th>
+                            <th>Chromosome</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Strand</th>
+                            <th>Assembly</th>
+                            <th>Genome Browser</th>
+                        </tr>
+
+                        {% for gene in genes %}
+
+                        <tr>
+
+                            <td>
+                                {{ gene.symbol }}
+                            </td>
+
+                            <td>
+                                {{ gene.name }}
+                            </td>
+
+                            <td>
+                                {{ "%.4f"|format(gene.score) }}
+                            </td>
+
+                            <td>
+                                {{ gene.chromosome }}
+                            </td>
+
+                            <td>
+                                {{ gene.start }}
+                            </td>
+
+                            <td>
+                                {{ gene.end }}
+                            </td>
+
+                            <td>
+                                {{ gene.strand }}
+                            </td>
+
+                            <td>
+                                {{ gene.assembly }}
+                            </td>
+
+                            <td>
+                                <a href="{{ gene.browser_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    View in UCSC
+                                </a>
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            <!-- CHROMOSOME DISTRIBUTION -->
+
+            <div class="chart-card">
+
+                <h2 class="card-title">
+                    Chromosome Distribution
+                </h2>
+
+                <p class="card-description">
+                    Distribution of disease-associated genes across chromosomes.
+                </p>
+
+                <div class="chart-wrapper">
+                    <canvas id="chromosomeChart"></canvas>
+                </div>
+
+            </div>
+
+            {% else %}
+
+            <div class="empty-state">
+                Genomic location data is not available.
+            </div>
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- ========================================================= -->
+        <!-- 3. VARIANTS                                              -->
+        <!-- ========================================================= -->
+
+        <section id="variants"
+                 class="content-section">
+
+            {% if clinvar_variants %}
+
+            <div class="chart-card">
+
+                <h2 class="card-title">
+                    ClinVar Variant Distribution
+                </h2>
+
+                <p class="card-description">
+                    Distribution of retrieved variants according to their clinical significance.
+                </p>
+
+                <div class="chart-wrapper">
+                    <canvas id="clinvarChart"></canvas>
+                </div>
+
+            </div>
+
+
+            <div class="content-card">
+
+                <h2 class="card-title">
+                    ClinVar Variants
+                </h2>
+
+                <p class="card-description">
+                    Retrieved ClinVar records filtered to the associated genes.
+                </p>
+
+                <div class="clinvar-table-container">
+
+                    <table class="clinvar-table">
+
+                        <tr>
+                            <th>Gene</th>
+                            <th>ClinVar ID</th>
+                            <th>Variant</th>
+                            <th>Variant Type</th>
+                            <th>Clinical Significance</th>
+                            <th>Molecular Consequence</th>
+                            <th>Assembly</th>
+                            <th>Chromosome</th>
+                            <th>Start</th>
+                            <th>Stop</th>
+                        </tr>
+
+                        {% for variant in clinvar_variants %}
+
+                        <tr>
+
+                            <td>
+                                {{ variant.gene }}
+                            </td>
+
+                            <td>
+                                <a href="https://www.ncbi.nlm.nih.gov/clinvar/{{ variant.clinvar_id }}/"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    {{ variant.clinvar_id }}
+                                </a>
+                            </td>
+
+                            <td>
+                                {{ variant.variant }}
+                            </td>
+
+                            <td>
+                                {{ variant.variant_type }}
+                            </td>
+
+                            <td>
+                                {{ variant.clinical_significance }}
+                            </td>
+
+                            <td>
+                                {{ variant.molecular_consequence }}
+                            </td>
+
+                            <td>
+                                {{ variant.assembly }}
+                            </td>
+
+                            <td>
+                                {{ variant.chromosome }}
+                            </td>
+
+                            <td>
+                                {{ variant.start }}
+                            </td>
+
+                            <td>
+                                {{ variant.stop }}
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </table>
+
+                </div>
+
+            </div>
+
+            {% else %}
+
+            <div class="empty-state">
+                No ClinVar variants found.
+            </div>
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- ========================================================= -->
+        <!-- 4. LITERATURE                                            -->
+        <!-- ========================================================= -->
+
+        <section id="literature"
+                 class="content-section">
+
+            {% if pubmed_articles %}
+
+            <div class="content-card">
+
+                <h2 class="card-title">
+                    Recent PubMed Articles
+                </h2>
+
+                <p class="card-description">
+                    Recent literature retrieved from PubMed for the selected disease.
+                </p>
+
+                <div class="table-container">
+
+                    <table>
+
+                        <tr>
+                            <th>PubMed ID</th>
+                            <th>Article Title</th>
+                            <th>Journal</th>
+                            <th>Publication Date</th>
+                        </tr>
+
+                        {% for article in pubmed_articles %}
+
+                        <tr>
+
+                            <td>
+                                <a href="https://pubmed.ncbi.nlm.nih.gov/{{ article.id }}/"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    {{ article.id }}
+                                </a>
+                            </td>
+
+                            <td>
+                                {{ article.title }}
+                            </td>
+
+                            <td>
+                                {{ article.journal }}
+                            </td>
+
+                            <td>
+                                {{ article.date }}
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </table>
+
+                </div>
+
+            </div>
+
+            {% else %}
+
+            <div class="empty-state">
+                No PubMed articles found.
+            </div>
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- ========================================================= -->
+        <!-- 5. GENE NEIGHBORHOOD                                     -->
+        <!-- ========================================================= -->
+
+        <section id="neighborhood"
+                 class="content-section">
+
+            {% if gene_neighborhoods %}
+
+            <div class="content-card">
+
+                <h2 class="card-title">
+                    Gene Neighborhood Analysis
+                </h2>
+
+                <p class="card-description">
+                    Nearby genes and genomic features within 500 kb on either side of each associated gene.
+                </p>
+
+
+                {% for gene_name, neighborhood in gene_neighborhoods.items() %}
+
+                    {% if neighborhood %}
+
+                    <h3 class="gene-neighborhood-title">
+                        {{ gene_name }}
+                    </h3>
+
+                    <div class="table-container">
+
+                        <table>
+
+                            <tr>
+                                <th>Gene / Feature</th>
+                                <th>Ensembl ID</th>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Strand</th>
+                            </tr>
+
+                            {% for item in neighborhood %}
+
+                            <tr>
+
+                                <td>
+                                    {{ item.name }}
+                                </td>
+
+                                <td>
+                                    {{ item.ensembl_id }}
+                                </td>
+
+                                <td>
+                                    {{ item.start }}
+                                </td>
+
+                                <td>
+                                    {{ item.end }}
+                                </td>
+
+                                <td>
+                                    {{ item.strand }}
+                                </td>
+
+                            </tr>
+
+                            {% endfor %}
+
+                        </table>
+
+                    </div>
+
+                    {% endif %}
+
+                {% endfor %}
+
+            </div>
+
+            {% else %}
+
+            <div class="empty-state">
+                Gene neighborhood data is not available for this search.
+            </div>
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- ========================================================= -->
+        <!-- 6. NETWORK ANALYSIS — LAST                               -->
+        <!-- ========================================================= -->
+
+        <section id="network"
+                 class="content-section">
+
+            <div class="network-card">
+
+                <div class="network-card-header">
+
+                    <div>
+
+                        <div class="network-label">
+                            Protein–Protein Interaction Analysis
+                        </div>
+
+                        <h2 class="network-title">
+                            Breast Cancer Protein Association Network
+                        </h2>
+
+                    </div>
+
+                    <div class="network-badge">
+                        STRING
+                    </div>
+
+                </div>
+
+
+                <p class="network-description">
+                    The top 10 breast cancer-associated genes identified using Open Targets were mapped to their corresponding human proteins and analyzed using the STRING database. The network represents functional associations among the selected proteins based on available evidence.
+                </p>
+
+
+                <!-- NETWORK IMAGE -->
+
+                <div class="network-image-container">
+
+                    <img src="{{ url_for('static', filename='string_network.png') }}"
+                         alt="STRING network of breast cancer-associated proteins"
+                         class="network-image">
+
+                </div>
+
+
+                <!-- STRING INSTRUCTIONS -->
+
+                <div class="network-instructions">
+
+                    <h3 class="card-title">
+                        Explore the Network in STRING
+                    </h3>
+
+                    <p class="card-description">
+                        The generated protein association network was obtained using the following top 10 breast cancer-associated proteins:
+                    </p>
+
+
+                    <div class="protein-list">
+
+                        <ol>
+
+                            <li><strong>BRCA2</strong></li>
+                            <li><strong>BRCA1</strong></li>
+                            <li><strong>PIK3CA</strong></li>
+                            <li><strong>PALB2</strong></li>
+                            <li><strong>CHEK2</strong></li>
+                            <li><strong>TP53</strong></li>
+                            <li><strong>ESR1</strong></li>
+                            <li><strong>ATM</strong></li>
+                            <li><strong>AKT1</strong></li>
+                            <li><strong>ERBB2</strong></li>
+
+                        </ol>
+
+                    </div>
+
+
+                    <div class="string-instruction-box">
+
+                        <p>
+                            <strong>Recommended STRING analysis:</strong>
+                        </p>
+
+                        <p>
+                            Search for <strong>BRCA2</strong> and add the remaining proteins listed above.
+                            Select the organism as <strong>Homo sapiens</strong>.
+                            Then click <strong>Continue</strong> and wait for the network to appear.
+                        </p>
+
+                        <p>
+                            The STRING results page provides additional information about protein associations,
+                            interaction evidence, confidence scores and network analysis.
+                        </p>
+
+                    </div>
+
+                    <!-- General STRING -->
+                    <a class="string-link"
+                       href="https://string-db.org/"
+                       target="_blank"
+                       rel="noopener noreferrer">
+                        Open STRING Database →
+                    </a>
+
+                </div>
+
+
+                <p class="network-note">
+                    STRING networks can represent both physical and functional protein associations.
+                    The STRING score represents confidence in an association rather than direct binding strength.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        {% endif %}
+
+    </main>
+
+</div>
+
+
+<!-- ============================================================= -->
+<!-- CHART DATA + CHART INITIALIZATION                             -->
+<!-- ============================================================= -->
+
+<script>
+
+    /*
+     * The charts are initialized only when their section is opened.
+     *
+     * This is important for the Genomic Locations chromosome chart:
+     * Chart.js can calculate an incorrect canvas size if a chart is
+     * initialized while its parent section is display:none.
+     */
+
+    let associationChartInstance = null;
+    let chromosomeChartInstance = null;
+    let clinvarChartInstance = null;
+
+
+    {% if genes %}
+
+    const geneLabels =
+        {{ genes|map(attribute='symbol')|list|tojson }};
+
+    const associationScores =
+        {{ genes|map(attribute='score')|list|tojson }};
+
+
+    const chromosomes =
+        {{ genes|map(attribute='chromosome')|list|tojson }};
+
+
+    {% else %}
+
+    const geneLabels = [];
+    const associationScores = [];
+    const chromosomes = [];
+
+    {% endif %}
+
+
+    {% if clinvar_variants %}
+
+    const clinicalSignificances =
+        {{ clinvar_variants|map(attribute='clinical_significance')|list|tojson }};
+
+    {% else %}
+
+    const clinicalSignificances = [];
+
+    {% endif %}
+
+
+    /*
+     * Associated Genes chart
+     */
+
+    function initializeAssociationChart() {
+
+        const canvas =
+            document.getElementById('associationChart');
+
+        if (!canvas) {
+            return;
+        }
+
+        if (associationChartInstance) {
+            associationChartInstance.destroy();
+        }
+
+        associationChartInstance =
+            new Chart(canvas, {
+
+                type:'bar',
+
+                data:{
+                    labels:geneLabels,
+
+                    datasets:[{
+                        label:'Association Score',
+                        data:associationScores
+                    }]
+                },
+
+                options:{
+
+                    responsive:true,
+                    maintainAspectRatio:false,
+
+                    scales:{
+
+                        y:{
+                            beginAtZero:true,
+                            max:1,
+
+                            title:{
+                                display:true,
+                                text:'Association Score'
+                            }
+                        },
+
+                        x:{
+                            title:{
+                                display:true,
+                                text:'Gene'
+                            }
+                        }
+
+                    }
+
+                }
+
+            });
+
+    }
+
+
+    /*
+     * Chromosome Distribution chart
+     *
+     * The chromosome values are taken directly from the genes
+     * returned by Ensembl through app.py.
+     */
+
+    function initializeChromosomeChart() {
+
+        const canvas =
+            document.getElementById('chromosomeChart');
+
+        if (!canvas) {
+            return;
+        }
+
+        if (chromosomeChartInstance) {
+            chromosomeChartInstance.destroy();
+        }
+
+
+        const chromosomeCounts = {};
+
+        chromosomes.forEach(function(chromosome) {
+
+            if (chromosome) {
+
+                chromosomeCounts[chromosome] =
+                    (chromosomeCounts[chromosome] || 0) + 1;
+
+            }
+
+        });
+
+
+        const chromosomeLabels =
+            Object.keys(chromosomeCounts).sort(function(a,b) {
+
+                const A = parseInt(a);
+                const B = parseInt(b);
+
+                /*
+                 * Numeric chromosomes are ordered numerically.
+                 * Non-numeric chromosome names such as X, Y, MT
+                 * are retained and sorted alphabetically.
+                 */
+
+                if (!isNaN(A) && !isNaN(B)) {
+                    return A - B;
+                }
+
+                if (!isNaN(A)) {
+                    return -1;
+                }
+
+                if (!isNaN(B)) {
+                    return 1;
+                }
+
+                return a.localeCompare(b);
+
+            });
+
+
+        const chromosomeValues =
+            chromosomeLabels.map(function(chromosome) {
+
+                return chromosomeCounts[chromosome];
+
+            });
+
+
+        chromosomeChartInstance =
+            new Chart(canvas, {
+
+                type:'bar',
+
+                data:{
+
+                    labels:chromosomeLabels,
+
+                    datasets:[{
+
+                        label:'Number of Associated Genes',
+
+                        data:chromosomeValues
+
+                    }]
+
+                },
+
+                options:{
+
+                    responsive:true,
+                    maintainAspectRatio:false,
+
+                    scales:{
+
+                        y:{
+
+                            beginAtZero:true,
+
+                            ticks:{
+                                stepSize:1
+                            },
+
+                            title:{
+                                display:true,
+                                text:'Number of Genes'
+                            }
+
+                        },
+
+                        x:{
+
+                            title:{
+                                display:true,
+                                text:'Chromosome'
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            });
+
+    }
+
+
+    /*
+     * ClinVar chart
+     */
+
+    function initializeClinvarChart() {
+
+        const canvas =
+            document.getElementById('clinvarChart');
+
+        if (!canvas) {
+            return;
+        }
+
+        if (clinvarChartInstance) {
+            clinvarChartInstance.destroy();
+        }
+
+
+        const significanceCounts = {};
+
+
+        clinicalSignificances.forEach(function(significance) {
+
+            if (significance) {
+
+                significanceCounts[significance] =
+                    (significanceCounts[significance] || 0) + 1;
+
+            }
+
+        });
+
+
+        const significanceLabels =
+            Object.keys(significanceCounts);
+
+
+        const significanceValues =
+            significanceLabels.map(function(significance) {
+
+                return significanceCounts[significance];
+
+            });
+
+
+        clinvarChartInstance =
+            new Chart(canvas, {
+
+                type:'bar',
+
+                data:{
+
+                    labels:significanceLabels,
+
+                    datasets:[{
+
+                        label:'Number of ClinVar Variants',
+
+                        data:significanceValues
+
+                    }]
+
+                },
+
+                options:{
+
+                    indexAxis:'y',
+
+                    responsive:true,
+                    maintainAspectRatio:false,
+
+                    scales:{
+
+                        x:{
+
+                            beginAtZero:true,
+
+                            ticks:{
+                                stepSize:1
+                            },
+
+                            title:{
+                                display:true,
+                                text:'Number of Variants'
+                            }
+
+                        },
+
+                        y:{
+
+                            title:{
+                                display:true,
+                                text:'Clinical Significance'
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            });
+
+    }
+
+
+    /*
+     * Initialize the appropriate chart when a section becomes visible.
+     */
+
+    function initializeChartForSection(sectionName) {
+
+        if (sectionName === 'genes') {
+
+            initializeAssociationChart();
+
+        }
+
+        if (sectionName === 'locations') {
+
+            /*
+             * Give the browser a moment to make the section visible
+             * before Chart.js calculates its dimensions.
+             */
+
+            setTimeout(function() {
+
+                initializeChromosomeChart();
+
+                window.dispatchEvent(
+                    new Event('resize')
+                );
+
+            }, 50);
+
+        }
+
+        if (sectionName === 'variants') {
+
+            setTimeout(function() {
+
+                initializeClinvarChart();
+
+                window.dispatchEvent(
+                    new Event('resize')
+                );
+
+            }, 50);
+
+        }
+
+    }
+
+
+    /*
+     * Initialize the default Associated Genes chart after
+     * the page has loaded.
+     */
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+        initializeAssociationChart();
+
+    });
+
+</script>
+
+
+<!-- ============================================================= -->
+<!-- NAVIGATION                                                    -->
+<!-- ============================================================= -->
+
+<script>
+
+    function clearNavigationActiveState() {
+
+        document
+            .querySelectorAll('.nav-button,.section-tab')
+            .forEach(function(button) {
+
+                button.classList.remove('active');
+
+            });
+
+    }
+
+
+    function openHome(event) {
+
+        document
+            .querySelectorAll('.content-section')
+            .forEach(function(section) {
+
+                section.classList.remove('active');
+
+            });
+
+
+        clearNavigationActiveState();
+
+
+        const homeSection =
+            document.getElementById('home');
+
+
+        /*
+         * On the landing page there is no result-section "home".
+         * Therefore the function simply keeps the landing page visible.
+         */
+
+        if (homeSection) {
+
+            homeSection.classList.add('active');
+
+        }
+
+
+        if (event && event.currentTarget) {
+
+            event.currentTarget.classList.add('active');
+
+        }
+
+    }
+
+
+    function openSection(event, sectionName) {
+
+        document
+            .querySelectorAll('.content-section')
+            .forEach(function(section) {
+
+                section.classList.remove('active');
+
+            });
+
+
+        clearNavigationActiveState();
+
+
+        const section =
+            document.getElementById(sectionName);
+
+
+        if (section) {
+
+            section.classList.add('active');
+
+        }
+
+
+        /*
+         * Activate the clicked tab/button.
+         */
+
+        if (event && event.currentTarget) {
+
+            event.currentTarget.classList.add('active');
+
+        }
+
+
+        /*
+         * Keep the corresponding sidebar item active
+         * when the user clicks a result tab.
+         */
+
+        const sidebarButtons =
+            document.querySelectorAll('.nav-button');
+
+
+        sidebarButtons.forEach(function(button) {
+
+            const text =
+                button.textContent
+                    .trim()
+                    .toLowerCase();
+
+
+            const sectionNames = {
+
+                genes:'associated genes',
+
+                locations:'genomic locations',
+
+                variants:'variants',
+
+                literature:'literature',
+
+                neighborhood:'gene neighborhood',
+
+                network:'network analysis'
+
+            };
+
+
+            if (
+                sectionNames[sectionName] &&
+                text === sectionNames[sectionName]
+            ) {
+
+                button.classList.add('active');
+
+            }
+
+        });
+
+
+        /*
+         * Initialize charts only after their section becomes visible.
+         */
+
+        initializeChartForSection(sectionName);
+
+
+        /*
+         * Allow the browser to recalculate layout dimensions.
+         */
+
+        setTimeout(function() {
+
+            window.dispatchEvent(
+                new Event('resize')
+            );
+
+        }, 100);
+
+    }
+
+</script>
+
+</body>
+</html>
